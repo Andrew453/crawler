@@ -18,11 +18,16 @@ import java.util.Objects;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 public class Crawler {
     private static final String USER = "guest";
     private static final String HOST = "127.0.0.1";
     private static final String PASS = "guest";
+    private String datePattern = "\\d{2}\\.\\d{2}\\.\\d{4}";
+
+    private Pattern regex = Pattern.compile(datePattern);
     private String RECIEVE_QUEUE_NAME ="planner_queue";
     private String SEND_QUEUE_NAME ="crawler_queue";
     private String SEND_ROUTING_KEY = "cr_to_pl";
@@ -185,7 +190,12 @@ public class Crawler {
             }
             ni.text = sb.toString();
             Elements date = document.select("div.article__info-date");
-            ni.date = date.text();
+
+            Matcher matcher = regex.matcher(date.text());
+
+            if (matcher.find()) {
+                ni.date = matcher.group();
+            }
             Elements title = document.select("div.article__title");
             ni.header = title.text();
         } catch (IOException e) {

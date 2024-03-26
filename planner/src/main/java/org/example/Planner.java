@@ -37,10 +37,13 @@ public class Planner {
     Queue queue;
 
     Channel channel;
+    ElasticWorker elasticWorker;
     private static final String EXCHANGE_NAME = "parser";
 
     Planner() throws InterruptedException, IOException {
         this.queue = new Queue(RECIEVE_ROUTING_KEY, EXCHANGE_NAME, RECIEVE_QUEUE_NAME);
+        this.elasticWorker = new ElasticWorker();
+
         // создание фабрики соединений
         ConnectionFactory factory = new ConnectionFactory();
         factory.setHost(HOST);
@@ -121,7 +124,7 @@ public class Planner {
                 nif.Store();
             }
             SendToProccess();
-            Listen();
+//            Listen();
         } catch (Exception e) {
             e.printStackTrace();
             return false;
@@ -178,6 +181,7 @@ public class Planner {
         if (isStore.get()) {
             System.out.println("STORED DATA");
             System.out.println(jsonString);
+            elasticWorker.storeNewsInfo(ni);
             System.out.println("STORED DATA");
         }
 

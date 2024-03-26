@@ -1,7 +1,7 @@
 package org.example;
 
 public class NewsInfo {
-    String hashMD5;
+    String hash;
     String text;
     String header;
     String date;
@@ -12,7 +12,7 @@ public class NewsInfo {
         System.out.println("Header: " + header);
         System.out.println("Date: " + date);
         System.out.println("Link: " + link);
-        System.out.println("Hash: " + hashMD5);
+        System.out.println("Hash: " + hash);
         System.out.println();
     }
 
@@ -54,11 +54,11 @@ public class NewsInfo {
         this.link = link;
     }
 
-    public String getHashMD5() {
-        return hashMD5;
+    public String getHash() {
+        return hash;
     }
 
-    public void setHashMD5(String hashMD5) {
-        this.hashMD5 = hashMD5;
+    public void setHash(String hash) {
+        this.hash = hash;
     }
 }

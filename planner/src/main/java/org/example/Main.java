@@ -1,7 +1,6 @@
 package org.example;
 
 
-
 import co.elastic.clients.elasticsearch.ElasticsearchClient;
 import co.elastic.clients.elasticsearch.core.IndexRequest;
 import co.elastic.clients.elasticsearch.core.IndexResponse;
@@ -14,44 +13,62 @@ import org.apache.http.HttpHost;
 import org.elasticsearch.client.RestClient;
 
 import java.io.IOException;
+import java.util.Objects;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 public class Main {
-    public static void main(String[] args) throws IOException, InterruptedException {
-        String url = "https://ria.ru/";
+    public static void main(String[] args) throws Exception {
+//        Server server = new Server();
+//        server.start();
 
-        Planner planner = new Planner();
-        planner.getNewsLinks(url);
-// Create the low-level client
 
-//        NewsInfo ni = new NewsInfo();
-//        ni.date = "test";
-//        ni.link = "test";
-//        ni.header = "test";
-//        ni.text = "test";
-//        ni.hashMD5 = "hash_test";
+
+
+
+
+//        String url = "https://ria.ru/";
+//        Planner planner = new Planner();
 //
-//        IndexResponse response = client.index(i -> i
-//                .index("news")
-//                .id(ni.getHashMD5())
-//                .document(ni)
-//        );
-//
-//        System.out.println("Indexed with version " + response.version());
-//        client.index()
-//        SearchResponse<NewsInfo> search = client.search(s -> s
-//                        .index("news"),
-////                        .query(q -> q
-////                                .term(t -> t
-////                                        .field("hash")
-////                                        .value(v -> v.stringValue("news"))
-////                                )),
-//                NewsInfo.class);
+//        ExecutorService executor = Executors.newSingleThreadExecutor();
+//        executor.submit(() -> {
+//            try {
+//                planner.Listen();
+//            } catch (IOException e) {
+//                System.out.println("Ошибка запуска Listen RabbitMQ");
+//            }
+//        });
+//        planner.getNewsLinks(url);
+//        Thread.sleep(500000);
+//        executor.shutdownNow();
 
-//        for (Hit<NewsInfo> hit: search.hits().hits()) {
-//            processNewsInfo(hit.source());
+
+
+
+        ElasticWorker ew = new ElasticWorker();
+
+
+
+//       WRITE
+//        for (int i = 0; i < 15; i++) {
+//            NewsInfo ni = new NewsInfo();
+//            ni.link = "link" + i;
+//            ni.date = "date" + i;
+//            ni.header = "header" + i;
+//            ni.text = "text" + i;
+//            ni.hash = "hash" + i;
+//            ew.storeNewsInfo(ni);
 //        }
 
+//        READ
+//        for (int i = 0; i < 15; i++) {
+//            ew.searchNewsInfoAnd("header"+i, "link"+(i+1));
+//        }
+//        System.exit(0);
     }
+
     private static void processNewsInfo(NewsInfo p) {
         p.print();
     }
