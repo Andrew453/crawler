@@ -11,6 +11,7 @@ import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 import org.json.JSONArray;
+
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
@@ -28,8 +29,8 @@ public class Crawler {
     private String datePattern = "\\d{2}\\.\\d{2}\\.\\d{4}";
 
     private Pattern regex = Pattern.compile(datePattern);
-    private String RECIEVE_QUEUE_NAME ="planner_queue";
-    private String SEND_QUEUE_NAME ="crawler_queue";
+    private String RECIEVE_QUEUE_NAME = "planner_queue";
+    private String SEND_QUEUE_NAME = "crawler_queue";
     private String SEND_ROUTING_KEY = "cr_to_pl";
     private String RECIEVE_ROUTING_KEY = "pl_to_cr";
     private String EXCHANGE_NAME = "parser";
@@ -40,7 +41,7 @@ public class Crawler {
 
     Crawler(int numThreads) throws IOException {
         this.numThreads = numThreads;
-        this.queue = new Queue(RECIEVE_ROUTING_KEY,EXCHANGE_NAME, RECIEVE_QUEUE_NAME);
+        this.queue = new Queue(RECIEVE_ROUTING_KEY, EXCHANGE_NAME, RECIEVE_QUEUE_NAME);
         // создание фабрики соединений
         ConnectionFactory factory = new ConnectionFactory();
         factory.setHost(HOST);
@@ -69,7 +70,7 @@ public class Crawler {
             return;
         }
         try {
-            channel.exchangeDeclare(EXCHANGE_NAME,"direct");
+            channel.exchangeDeclare(EXCHANGE_NAME, "direct");
         } catch (Exception e) {
             System.out.println("channel.exchangeDeclare");
             System.out.println(e);
@@ -77,7 +78,7 @@ public class Crawler {
         }
 
         try {
-            channel.queueDeclare(SEND_QUEUE_NAME,false,false,false,null);
+            channel.queueDeclare(SEND_QUEUE_NAME, false, false, false, null);
         } catch (Exception e) {
             System.out.println("channel.queueDeclare");
             System.out.println(e);
@@ -98,12 +99,13 @@ public class Crawler {
 
     public void SendMessage(String msg) {
         try {
-            channel.basicPublish(EXCHANGE_NAME, SEND_ROUTING_KEY, null,msg.getBytes());
+            channel.basicPublish(EXCHANGE_NAME, SEND_ROUTING_KEY, null, msg.getBytes());
         } catch (Exception e) {
             System.out.println("channel.basicPublish");
             System.out.println(e);
         }
     }
+
     DeliverCallback start = (consumerTag, delivery) -> {
 
         String jsonString = new String(delivery.getBody(), StandardCharsets.UTF_8);
@@ -111,12 +113,11 @@ public class Crawler {
         try {
             jsonArray = new JSONArray(jsonString);
         } catch (Exception e) {
-            queue.GetChannel().basicAck(delivery.getEnvelope().getDeliveryTag(),false);
             System.out.println("Incorrect input string");
             System.out.println(jsonString);
             return;
         }
-        queue.GetChannel().basicAck(delivery.getEnvelope().getDeliveryTag(),true);
+        queue.getChannel().basicAck(delivery.getEnvelope().getDeliveryTag(), false);
         System.out.println("start");
 
         // Преобразуем JSONArray в ArrayList<String>
@@ -136,21 +137,22 @@ public class Crawler {
     public void StartParse(ArrayList<String> urls) throws InterruptedException {
         ExecutorService executor = null;
         try {
-             executor = Executors.newFixedThreadPool(this.numThreads);
+            executor = Executors.newFixedThreadPool(this.numThreads);
         } catch (Exception e) {
             System.out.println("Error: Executors.newFixedThreadPool()");
-            System.out.println(e.getMessage());;
+            System.out.println(e.getMessage());
+            ;
             return;
         }
 
-        for (String url :urls) {
+        for (String url : urls) {
             AtomicReference<NewsInfo> ni = new AtomicReference<>(new NewsInfo());
             executor.submit(() -> {
-                try {
-                    Thread.sleep(1000);
-                } catch (InterruptedException e) {
-                    throw new RuntimeException(e);
-                }
+//                try {
+//                    Thread.sleep(1000);
+//                } catch (InterruptedException e) {
+//                    throw new RuntimeException(e);
+//                }
                 ni.set(Parse(url));
                 synchronized (Objects.requireNonNull(ni)) {
                     this.Response(ni.get());

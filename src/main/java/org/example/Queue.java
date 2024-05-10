@@ -65,7 +65,7 @@ public class Queue {
     public void Listen(DeliverCallback deliverCallback) {
         try {
             if (channel.isOpen()) {
-                channel.basicConsume(QUEUE_NAME,true,deliverCallback, consumerTag-> { });
+                channel.basicConsume(QUEUE_NAME,false,deliverCallback, consumerTag-> { });
             } else {
                 System.out.println("closed channel input");
             }
@@ -74,9 +74,6 @@ public class Queue {
             System.out.println(e);
             return;
         }
-    }
-    public Channel GetChannel(){
-        return this.channel;
     }
 
     public Channel getChannel() {
