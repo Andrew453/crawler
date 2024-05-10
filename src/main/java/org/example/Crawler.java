@@ -148,11 +148,11 @@ public class Crawler {
         for (String url : urls) {
             AtomicReference<NewsInfo> ni = new AtomicReference<>(new NewsInfo());
             executor.submit(() -> {
-//                try {
-//                    Thread.sleep(1000);
-//                } catch (InterruptedException e) {
-//                    throw new RuntimeException(e);
-//                }
+                try {
+                    Thread.sleep(1000);
+                } catch (InterruptedException e) {
+                    throw new RuntimeException(e);
+                }
                 ni.set(Parse(url));
                 synchronized (Objects.requireNonNull(ni)) {
                     this.Response(ni.get());
