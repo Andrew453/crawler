@@ -16,16 +16,6 @@ public class Main {
     public static void main(String[] args) throws IOException, InterruptedException {
         Crawler crawler = new Crawler(1);
         ExecutorService executor = Executors.newSingleThreadExecutor();
-
-
-        executor.submit(() -> {
-            try {
-                crawler.Listen();
-            } catch (IOException e) {
-                System.out.println("Ошибка запуска Listen RabbitMQ");
-            }
-        });
-        Thread.sleep(500000);
-        executor.shutdownNow();
+        crawler.Listen();
     }
 }
