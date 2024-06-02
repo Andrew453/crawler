@@ -1,6 +1,8 @@
 package org.example;
 
-public class NewsInfo {
+import java.util.Objects;
+
+public class News {
     String text;
     String header;
     String date;
@@ -12,6 +14,22 @@ public class NewsInfo {
         System.out.println("Date: " + date);
         System.out.println("Link: " + link);
         System.out.println();
+    }
+
+    public boolean Valid() {
+        if (Objects.equals(header, "")) {
+            return false;
+        }
+        if (Objects.equals(text, "")) {
+            return false;
+        }
+        if (Objects.equals(date, "")) {
+            return false;
+        }
+        if (Objects.equals(link, "")) {
+            return false;
+        }
+        return true;
     }
 
     public void printText() {

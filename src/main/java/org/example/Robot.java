@@ -22,26 +22,26 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-public class Crawler {
+public class Robot {
     private static final String USER = "guest";
     private static final String HOST = "127.0.0.1";
     private static final String PASS = "guest";
-    private String datePattern = "\\d{2}\\.\\d{2}\\.\\d{4}";
+    private String datePattern = "\\d{4}-\\d{2}-\\d{2}";
 
-    private Pattern regex = Pattern.compile(datePattern);
-    private String RECIEVE_QUEUE_NAME = "planner_queue";
-    private String SEND_QUEUE_NAME = "crawler_queue";
-    private String SEND_ROUTING_KEY = "cr_to_pl";
-    private String RECIEVE_ROUTING_KEY = "pl_to_cr";
-    private String EXCHANGE_NAME = "parser";
-    private int numThreads;
-    Queue queue;
+    private Pattern regular = Pattern.compile(datePattern);
+    private String RECIEVE_QUEUE = "planner_queue";
+    private String SEND_QUEUE = "crawler_queue";
+    private String SEND_KEY = "cr_to_pl";
+    private String RECIEVE_KEY = "pl_to_cr";
+    private String EXCHANGE = "parser";
+    private int threadsCount;
+    Listener listener;
 
     Channel channel;
 
-    Crawler(int numThreads) throws IOException {
-        this.numThreads = numThreads;
-        this.queue = new Queue(RECIEVE_ROUTING_KEY, EXCHANGE_NAME, RECIEVE_QUEUE_NAME);
+    Robot(int threadCounbt) throws IOException {
+        this.threadsCount = threadCounbt;
+        this.listener = new Listener(RECIEVE_KEY, EXCHANGE, RECIEVE_QUEUE);
         // создание фабрики соединений
         ConnectionFactory factory = new ConnectionFactory();
         factory.setHost(HOST);
@@ -70,7 +70,7 @@ public class Crawler {
             return;
         }
         try {
-            channel.exchangeDeclare(EXCHANGE_NAME, "direct");
+            channel.exchangeDeclare(EXCHANGE, "direct");
         } catch (Exception e) {
             System.out.println("channel.exchangeDeclare");
             System.out.println(e);
@@ -78,7 +78,7 @@ public class Crawler {
         }
 
         try {
-            channel.queueDeclare(SEND_QUEUE_NAME, false, false, false, null);
+            channel.queueDeclare(SEND_QUEUE, false, false, false, null);
         } catch (Exception e) {
             System.out.println("channel.queueDeclare");
             System.out.println(e);
@@ -89,17 +89,17 @@ public class Crawler {
         this.channel = channel;
     }
 
-    public void setNumThreads(int numThreads) {
-        this.numThreads = numThreads;
+    public void setThreadsCount(int threadsCount) {
+        this.threadsCount = threadsCount;
     }
 
     public void Listen() throws IOException {
-        queue.Listen(start);
+        listener.Listen(start);
     }
 
-    public void SendMessage(String msg) {
+    public void Send(String msg) {
         try {
-            channel.basicPublish(EXCHANGE_NAME, SEND_ROUTING_KEY, null, msg.getBytes());
+            channel.basicPublish(EXCHANGE, SEND_KEY, null, msg.getBytes());
         } catch (Exception e) {
             System.out.println("channel.basicPublish");
             System.out.println(e);
@@ -108,36 +108,35 @@ public class Crawler {
 
     DeliverCallback start = (consumerTag, delivery) -> {
 
-        String jsonString = new String(delivery.getBody(), StandardCharsets.UTF_8);
-        JSONArray jsonArray = null;
+        String jsonBody = new String(delivery.getBody(), StandardCharsets.UTF_8);
+        JSONArray jarr = null;
         try {
-            jsonArray = new JSONArray(jsonString);
+            jarr = new JSONArray(jsonBody);
         } catch (Exception e) {
             System.out.println("Incorrect input string");
-            System.out.println(jsonString);
+            System.out.println(jsonBody);
             return;
         }
-        queue.getChannel().basicAck(delivery.getEnvelope().getDeliveryTag(), false);
+        listener.getChannel().basicAck(delivery.getEnvelope().getDeliveryTag(), false);
         System.out.println("start");
 
-        // Преобразуем JSONArray в ArrayList<String>
         ArrayList<String> urls = new ArrayList<>();
-        for (int i = 0; i < jsonArray.length(); i++) {
-            urls.add(jsonArray.getString(i));
+        for (int i = 0; i < jarr.length(); i++) {
+            urls.add(jarr.getString(i));
         }
         System.out.println(urls);
         try {
-            StartParse(urls);
+            Start(urls);
         } catch (InterruptedException e) {
             throw new RuntimeException(e);
         }
-        System.out.println("DONE");
+        System.out.println("Finish");
     };
 
-    public void StartParse(ArrayList<String> urls) throws InterruptedException {
+    public void Start(ArrayList<String> urls) throws InterruptedException {
         ExecutorService executor = null;
         try {
-            executor = Executors.newFixedThreadPool(this.numThreads);
+            executor = Executors.newFixedThreadPool(this.threadsCount);
         } catch (Exception e) {
             System.out.println("Error: Executors.newFixedThreadPool()");
             System.out.println(e.getMessage());
@@ -146,16 +145,19 @@ public class Crawler {
         }
 
         for (String url : urls) {
-            AtomicReference<NewsInfo> ni = new AtomicReference<>(new NewsInfo());
+            AtomicReference<News> n = new AtomicReference<>(new News());
             executor.submit(() -> {
                 try {
                     Thread.sleep(1000);
                 } catch (InterruptedException e) {
                     throw new RuntimeException(e);
                 }
-                ni.set(Parse(url));
-                synchronized (Objects.requireNonNull(ni)) {
-                    this.Response(ni.get());
+                News news =  ParseNews(url);
+//                if (news.Valid()) {
+                    n.set(news);
+//                }
+                synchronized (Objects.requireNonNull(n)) {
+                    this.Response(n.get());
                 }
             });
         }
@@ -164,8 +166,8 @@ public class Crawler {
         }
     }
 
-    private NewsInfo Parse(String url) {
-        NewsInfo ni = new NewsInfo();
+    public News ParseNews(String url) {
+        News n = new News();
         try {
             // Получаем HTML-страницу с сайта
             Document document = Jsoup.connect(url).get();
@@ -183,31 +185,35 @@ public class Crawler {
                     System.out.printf("Incorrect status code: %d\n", statusCode);
                     return null;
             }
-
-            Elements texts = document.select("div.article__text");
-            ni.link = url;
+            Elements arcls = document.select("article");
+            Elements aside = document.select("aside.textML");
+            Elements time = aside.select("time");
+            Elements title = arcls.select("h1");
+            Elements texts = document.select("p");
+            n.link = url;
             StringBuilder sb = new StringBuilder();
             for (Element text : texts) {
                 sb.append(text.text()).append(" ");
             }
-            ni.text = sb.toString();
-            Elements date = document.select("div.article__info-date");
-
-            Matcher matcher = regex.matcher(date.text());
+            n.text = sb.toString();
+            n.header = title.text();
+            String date = time.attr("datetime");
+            Matcher matcher = regular.matcher(date);
 
             if (matcher.find()) {
-                ni.date = matcher.group();
+                n.date = matcher.group();
             }
-            Elements title = document.select("div.article__title");
-            ni.header = title.text();
+
+            n.print();
+            n.printText();
         } catch (IOException e) {
             e.printStackTrace();
             return null;
         }
-        return ni;
+        return n;
     }
 
-    private void Response(NewsInfo ni) {
+    private void Response(News ni) {
         ObjectMapper objectMapper = new ObjectMapper();
         String json;
         try {
@@ -217,9 +223,7 @@ public class Crawler {
             System.out.println(e);
             return;
         }
-        SendMessage(json);
-//        ni.print();
-//        ni.printText();
+        Send(json);
     }
 
 

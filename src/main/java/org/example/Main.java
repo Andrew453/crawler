@@ -1,12 +1,6 @@
 package org.example;
 
-import com.rabbitmq.client.DeliverCallback;
-import org.json.JSONArray;
-
-import javax.swing.*;
 import java.io.IOException;
-import java.nio.charset.StandardCharsets;
-import java.util.ArrayList;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
@@ -14,8 +8,8 @@ import java.util.concurrent.Executors;
 // click the <icon src="AllIcons.Actions.Execute"/> icon in the gutter.
 public class Main {
     public static void main(String[] args) throws IOException, InterruptedException {
-        Crawler crawler = new Crawler(1);
-        ExecutorService executor = Executors.newSingleThreadExecutor();
-        crawler.Listen();
+        Robot robot = new Robot(1);
+       robot.Listen();
+//        robot.Parse("https://www.interfax.ru/russia/964493");
     }
 }
